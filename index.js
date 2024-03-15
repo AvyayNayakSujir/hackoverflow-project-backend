@@ -6,7 +6,13 @@ const Issue = require("./models/Issue");
 const Event = require("./models/Event");
 const Comment = require("./models/Comment");
 const Room = require("./models/Room");
-const cors = require("cors");
+const cors = require("cors");  
+
+//image upload
+// form should have enctype ="multipart/form-data"
+const multer = require("multer");
+const {storage} =require('./cloudConfig')
+const upload = multer({ storage });
 
 const app = express();
 
@@ -142,7 +148,7 @@ async function main() {
       });
   });
 
-  app.post("/api/issue", (req, res) => {
+  app.post("/api/issue", upload.single("data[image]"), (req, res) => {
     const newIssue = new Issue(req.body);
     newIssue
       .save()
@@ -241,18 +247,22 @@ async function main() {
       });
   });
 
-  app.post("/api/event", (req, res) => {
-    const newEvent = new Event(req.body);
+  // app.post("/single",upload.single('image'),(req,res)=>{ //image upload demo
+  //     console.log(req.file);
+  // res.send("image uploaded succesfully")
+  // })
+
+  app.post("/api/event", upload.single("image"), (req, res) => {
+    const newEvent = new Event(req.body.data);
     newEvent
       .save()
       .then((event) => {
-        res.json({ event: event });
+        res.json({ message: "event created" });
       })
       .catch((err) => {
         res.status(500).json({ error: err.message });
       });
   });
-
 
   app.get("/api/getEvent/:id", async (req, res) => {
     try {
@@ -289,39 +299,38 @@ async function main() {
 
   //-------------------------------Comment-------------------------
 
- app.get('/api/:issueId/comment', async (req, res) => {
+  app.get("/api/:issueId/comment", async (req, res) => {
     try {
-        const { issueId } = req.params;
+      const { issueId } = req.params;
 
-        // Find the issue by its ID and populate its comments
-        const issue = await Issue.findById(issueId).populate('Comments');
+      // Find the issue by its ID and populate its comments
+      const issue = await Issue.findById(issueId).populate("Comments");
 
-        if (!issue) {
-            return res.status(404).json({ error: 'Issue not found' });
-        }
+      if (!issue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
 
-        const comments = issue.Comments; // Get the populated comments from the issue
+      const comments = issue.Comments; // Get the populated comments from the issue
 
-        res.json({ comments });
+      res.json({ comments });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error' });
+      console.error(error);
+      res.status(500).json({ error: "Server error" });
     }
-});
+  });
 
   app.post("/api/:issueId/comment", async (req, res) => {
-
-    const {issueId} = req.params;
+    const { issueId } = req.params;
     const issue = await Issue.findById(issueId);
     const newComment = new Comment(req.body);
 
-          issue.Comments.push(newComment);
-          await issue.save();
-          await newComment.save();
-     if(issue.Comments === " "){
-       res.json({ message: "couldnt" });
-     } 
-        res.json({message:"added em comments vro!"});
+    issue.Comments.push(newComment);
+    await issue.save();
+    await newComment.save();
+    if (issue.Comments === " ") {
+      res.json({ message: "couldnt" });
+    }
+    res.json({ message: "added em comments vro!" });
   });
 }
 
