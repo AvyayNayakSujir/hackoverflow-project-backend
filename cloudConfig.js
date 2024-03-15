@@ -6,9 +6,9 @@ const CLOUD_API_KEY ="392653166693636";
 const CLOUD_API_SECRET ="VHCj31Ru3 - GeQUy8nu6OjqbGeXY";
 
 cloudinary.config({
-    cloud_name: CLOUD_NAME,
-    api_key:CLOUD_API_KEY,
-    api_secret:CLOUD_API_SECRET
+  cloud_name: "dh0sqelog",
+  api_key: "392653166693636",
+  api_secret: "VHCj31Ru3 - GeQUy8nu6OjqbGeXY",
 });
 
 const storage = new CloudinaryStorage({

@@ -11,8 +11,10 @@ const cors = require("cors");
 //image upload
 // form should have enctype ="multipart/form-data"
 const multer = require("multer");
-const {storage} =require('./cloudConfig')
-const upload = multer({ storage });
+const cloudinary = require("cloudinary").v2;
+
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
 
 const app = express();
 
@@ -70,6 +72,31 @@ main()
   .catch((err) => console.log(err));
 
 async function main() {
+
+
+  
+cloudinary.config({
+  cloud_name: "dh0sqelog",
+  api_key: "392653166693636",
+  api_secret: "VHCj31Ru3 - GeQUy8nu6OjqbGeXY",
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "HiNeighbour_DEV",
+    allowedFormats: ["png", "jpg", "jpeg"], // supports promises as well
+  },
+});
+const upload = multer({
+  storage,
+  onError: function (err, next) {
+    console.error(err);
+    next(err);
+  },
+});
+
+
   // every api is written inside this function
   //mongoose connectivirt is in here
   await mongoose.connect(
@@ -247,22 +274,34 @@ async function main() {
       });
   });
 
-  // app.post("/single",upload.single('image'),(req,res)=>{ //image upload demo
-  //     console.log(req.file);
-  // res.send("image uploaded succesfully")
-  // })
+  app.post("/single",upload.single('image'),(req,res)=>{ //image upload demo
+      console.log(req.file);
+  res.send("image uploaded succesfully")
+  })
 
-  app.post("/api/event", upload.single("image"), (req, res) => {
-    const newEvent = new Event(req.body.data);
-    newEvent
-      .save()
-      .then((event) => {
-        res.json({ message: "event created" });
-      })
-      .catch((err) => {
-        res.status(500).json({ error: err.message });
-      });
-  });
+ app.post("/api/event", async (req, res) => {
+   try {
+     // Extract event data from request body
+     const eventData = req.body;
+
+     // Find the user by email
+     const user = await User.findOne({ email: eventData.email });
+
+     if (!user) {
+       return res.status(404).json({ error: "User not found" });
+     }
+     // Assign the user's _id to the createdBy field of the event
+     eventData.createdBy = user._id;
+     // Create a new event using the event data
+     const newEvent = new Event(eventData);
+     // Save the new event to the database
+     await newEvent.save();
+
+     res.json({ message: "Event created", event: newEvent });
+   } catch (err) {
+     res.status(500).json({ error: err.message });
+   }
+ });
 
   app.get("/api/getEvent/:id", async (req, res) => {
     try {
