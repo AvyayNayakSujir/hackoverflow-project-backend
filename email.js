@@ -1,6 +1,5 @@
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-const mongoose = require("mongoose");
 
 async function email(rmail, sub, body) {
   let transporter = nodemailer.createTransport({
@@ -29,5 +28,4 @@ async function email(rmail, sub, body) {
   }
 }
 
-email().catch((e) => console.error("Error occurred:", e));
 module.exports = email;

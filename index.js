@@ -6,15 +6,14 @@ const Issue = require("./models/Issue");
 const Event = require("./models/Event");
 const Comment = require("./models/Comment");
 const Room = require("./models/Room");
-const cors = require("cors");  
-
+const cors = require("cors");
+const email = require("./email");
 //image upload
 // form should have enctype ="multipart/form-data"
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
-
 
 const app = express();
 
@@ -72,30 +71,26 @@ main()
   .catch((err) => console.log(err));
 
 async function main() {
+  cloudinary.config({
+    cloud_name: "dh0sqelog",
+    api_key: "392653166693636",
+    api_secret: "VHCj31Ru3 - GeQUy8nu6OjqbGeXY",
+  });
 
-
-  
-cloudinary.config({
-  cloud_name: "dh0sqelog",
-  api_key: "392653166693636",
-  api_secret: "VHCj31Ru3 - GeQUy8nu6OjqbGeXY",
-});
-
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "HiNeighbour_DEV",
-    allowedFormats: ["png", "jpg", "jpeg"], // supports promises as well
-  },
-});
-const upload = multer({
-  storage,
-  onError: function (err, next) {
-    console.error(err);
-    next(err);
-  },
-});
-
+  const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: "HiNeighbour_DEV",
+      allowedFormats: ["png", "jpg", "jpeg"], // supports promises as well
+    },
+  });
+  const upload = multer({
+    storage,
+    onError: function (err, next) {
+      console.error(err);
+      next(err);
+    },
+  });
 
   // every api is written inside this function
   //mongoose connectivirt is in here
@@ -173,19 +168,39 @@ const upload = multer({
       .catch((err) => {
         res.status(500).json({ error: err.message });
       });
-  },    );
-
-  app.post("/api/issue", upload.single("data[image]"), (req, res) => {
-    const newIssue = new Issue(req.body);
-    newIssue
-      .save()
-      .then((issue) => {
-        res.json({ issue: issue });
-      })
-      .catch((err) => {
-        res.status(500).json({ error: err.message });
-      });
   });
+
+  app.post(
+    "/api/issue",
+    upload.single("data[image]"),
+    (req, res, next) => {
+      const newIssue = new Issue(req.body);
+      newIssue
+        .save()
+        .then((issue) => {
+          res.json({ issue: issue });
+          next();
+        })
+        .catch((err) => {
+          res.status(500).json({ error: err.message });
+        });
+    },
+    async (req, res, next) => {
+      console.log(req.body.title.split(" ").join("%20"));
+      const admins = await User.find({ Type: "ADMIN" });
+      admins.map((admin) => {
+        email(
+          admin.email,
+          `New Issue: ${req.body.title}`,
+          `Description: ${req.body.description} \n
+          Location: ${req.body.location} \n
+          website: http://localhost:3000/api/getIssue/${req.body.title
+            .split(" ")
+            .join("%20")}`
+        );
+      });
+    }
+  );
 
   app.get("/api/getIssue/:title", async (req, res) => {
     try {
@@ -274,34 +289,35 @@ const upload = multer({
       });
   });
 
-  app.post("/single",upload.single('image'),(req,res)=>{ //image upload demo
-      console.log(req.file);
-  res.send("image uploaded succesfully")
-  })
+  app.post("/single", upload.single("image"), (req, res) => {
+    //image upload demo
+    console.log(req.file);
+    res.send("image uploaded succesfully");
+  });
 
- app.post("/api/event", async (req, res) => {
-   try {
-     // Extract event data from request body
-     const eventData = req.body;
+  app.post("/api/event", async (req, res) => {
+    try {
+      // Extract event data from request body
+      const eventData = req.body;
 
-     // Find the user by email
-     const user = await User.findOne({ email: eventData.email });
+      // Find the user by email
+      const user = await User.findOne({ email: eventData.email });
 
-     if (!user) {
-       return res.status(404).json({ error: "User not found" });
-     }
-     // Assign the user's _id to the createdBy field of the event
-     eventData.createdBy = user._id;
-     // Create a new event using the event data
-     const newEvent = new Event(eventData);
-     // Save the new event to the database
-     await newEvent.save();
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      // Assign the user's _id to the createdBy field of the event
+      eventData.createdBy = user._id;
+      // Create a new event using the event data
+      const newEvent = new Event(eventData);
+      // Save the new event to the database
+      await newEvent.save();
 
-     res.json({ message: "Event created", event: newEvent });
-   } catch (err) {
-     res.status(500).json({ error: err.message });
-   }
- });
+      res.json({ message: "Event created", event: newEvent });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   app.get("/api/getEvent/:id", async (req, res) => {
     try {
@@ -373,50 +389,49 @@ const upload = multer({
   });
 }
 
-    // PUT route to handle user likes for comments
-    app.put("/comments/:iid/:email", async (req, res) => {
-      try {
-        const { iid, email } = req.params;
+// PUT route to handle user likes for comments
+app.put("/comments/:iid/:email", async (req, res) => {
+  try {
+    const { iid, email } = req.params;
 
-        // Find the comment by its ID
-        const comment = await Comment.findById(iid);
+    // Find the comment by its ID
+    const comment = await Comment.findById(iid);
 
-        if (!comment) {
-          return res.status(404).json({ error: "Comment not found" });
-        }
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
 
-        // Assuming you have a User model for user management
-        const user = await User.findOne({ email });
+    // Assuming you have a User model for user management
+    const user = await User.findOne({ email });
 
-        if (!user) {
-          return res.status(404).json({ error: "User not found" });
-        }
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-        // Check if the user has already liked the comment
-        if (comment.likedBy.includes(user._id)) {
-          return res
-            .status(400)
-            .json({ error: "User has already liked this comment" });
-        }
+    // Check if the user has already liked the comment
+    if (comment.likedBy.includes(user._id)) {
+      return res
+        .status(400)
+        .json({ error: "User has already liked this comment" });
+    }
 
-        // Update the comment's likedBy array with the user's ObjectId
-        comment.likedBy.push(user._id);
+    // Update the comment's likedBy array with the user's ObjectId
+    comment.likedBy.push(user._id);
 
-        // Increment the likes count
-        comment.likes++;
+    // Increment the likes count
+    comment.likes++;
 
-        // Save the updated comment
-        await comment.save();
+    // Save the updated comment
+    await comment.save();
 
-        res.json({ message: "Comment liked successfully" });
-      } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Server error" });
-      }
-    });
+    res.json({ message: "Comment liked successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
-  
-
+app.delete('')
 
 app.listen(3000, (req, res) => {
   console.log("listening at port 3000");
