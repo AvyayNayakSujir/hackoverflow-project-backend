@@ -8,6 +8,8 @@ const Comment = require("./models/Comment");
 const Room = require("./models/Room");
 const cors = require("cors");  
 
+
+
 //image upload
 // form should have enctype ="multipart/form-data"
 const multer = require("multer");
@@ -76,9 +78,9 @@ async function main() {
 
   
 cloudinary.config({
-  cloud_name: "dh0sqelog",
-  api_key: "392653166693636",
-  api_secret: "VHCj31Ru3 - GeQUy8nu6OjqbGeXY",
+  cloud_name: "dtzxy7xz9",
+  api_key: "798717289722889",
+  api_secret: "JPiN7AXJbNXxNu8v1pu-dLLTS0k",
 });
 
 const storage = new CloudinaryStorage({
@@ -274,12 +276,12 @@ const upload = multer({
       });
   });
 
-  app.post("/single",upload.single('image'),(req,res)=>{ //image upload demo
-      console.log(req.file);
-  res.send("image uploaded succesfully")
-  })
+  // app.post("/single",upload.single('image'),(req,res)=>{ //image upload demo
+  //     console.log(req.file);
+  // res.send("image uploaded succesfully")
+  // })
 
- app.post("/api/event", async (req, res) => {
+ app.post("/api/event",upload.single('image'), async (req, res) => {
    try {
      // Extract event data from request body
      const eventData = req.body;
