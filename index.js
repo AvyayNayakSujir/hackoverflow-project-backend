@@ -146,7 +146,7 @@ async function main() {
       .catch((err) => {
         res.status(500).json({ error: err.message });
       });
-  });
+  },    );
 
   app.post("/api/issue", upload.single("data[image]"), (req, res) => {
     const newIssue = new Issue(req.body);
