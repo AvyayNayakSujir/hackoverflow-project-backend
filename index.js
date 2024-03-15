@@ -6,6 +6,7 @@ const Issue = require("./models/Issue");
 const Event = require("./models/Event");
 const Comment = require("./models/Comment");
 const Room = require("./models/Room");
+const cors = require("cors");
 
 const app = express();
 
@@ -70,11 +71,13 @@ async function main() {
   );
   app.use(bodyParser.json());
   app.use(express.json());
+  app.use(cors());
 
   //---------------------------------User---------------------------
   app.get("/api/user", (req, res) => {
     User.find()
       .then((users) => {
+        console.log(users);
         res.json({ users: users });
       })
       .catch((err) => {
@@ -230,7 +233,7 @@ async function main() {
     const deletedRoom = await Room.findByIdAndDelete(roomId);
     res.status(200).json({ editedRoom: deletedRoom });
   });
-  //----------------------------------Event--------------------------
+  //FIXME:----------------------------------Event--------------------------
   app.get("/api/event", (req, res) => {
     Event.find()
       .then((events) => {
