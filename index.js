@@ -255,16 +255,25 @@ async function main() {
 
   //-------------------------------Comment-------------------------
 
+ app.get('/api/:issueId/comment', async (req, res) => {
+    try {
+        const { issueId } = req.params;
 
-  app.get("/api/:issueId/comment", async (req, res) => {
-    const {issueId} = req.params;
-    const Issues = await Issue.findById(issueId).populate("Comments");
-    const comments = Issues.comments;
+        // Find the issue by its ID and populate its comments
+        const issue = await Issue.findById(issueId).populate('Comments');
 
-    res.json({ comments: comments });
-     
-      
-  });
+        if (!issue) {
+            return res.status(404).json({ error: 'Issue not found' });
+        }
+
+        const comments = issue.Comments; // Get the populated comments from the issue
+
+        res.json({ comments });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 
   app.post("/api/:issueId/comment", async (req, res) => {
 
