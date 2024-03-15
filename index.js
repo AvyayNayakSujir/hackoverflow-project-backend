@@ -253,6 +253,40 @@ async function main() {
       });
   });
 
+
+  app.get("/api/getEvent/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const eventData = await Event.findOne({ _id: id });
+      res.status(200).json({ Event: eventData });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/updateEvent/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const data = req.body;
+      await Event.findByIdAndUpdate(id, data);
+
+      res.status(200).json({ message: "Updated Successfully" });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/deleteEvent/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      await Event.findByIdAndDelete(id);
+      res.status(200).json({ message: "deleted successfully" });
+    } catch (err) {
+      console.log(err);
+      res.status(504).json({ error: err });
+    }
+  });
+
   //-------------------------------Comment-------------------------
 
  app.get('/api/:issueId/comment', async (req, res) => {
