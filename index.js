@@ -288,28 +288,78 @@ async function main() {
   });
 
   //-------------------------------Comment-------------------------
-  app.get("/api/comment", (req, res) => {
-    Comment.find()
-      .then((comments) => {
-        res.json({ comments: comments });
-      })
-      .catch((err) => {
-        res.status(500).json({ error: err.message });
-      });
+
+
+  app.get("/api/:issueId/comment", async (req, res) => {
+    const {issueId} = req.params;
+    const Issues = await Issue.findById(issueId).populate("Comments");
+    const comments = Issues.comments;
+
+    res.json({ comments: comments });
+     
+      
   });
 
-  app.post("/api/comment", (req, res) => {
+  app.post("/api/:issueId/comment", async (req, res) => {
+
+    const {issueId} = req.params;
+    const issue = await Issue.findById(issueId);
     const newComment = new Comment(req.body);
-    newComment
-      .save()
-      .then((comment) => {
-        res.json({ comment: comment });
-      })
-      .catch((err) => {
-        res.status(500).json({ error: err.message });
-      });
+
+          issue.Comments.push(newComment);
+          await issue.save();
+          await newComment.save();
+     if(issue.Comments === " "){
+       res.json({ message: "couldnt" });
+     } 
+        res.json({message:"added em comments vro!"});
   });
 }
+
+    // PUT route to handle user likes for comments
+    app.put("/comments/:iid/:email", async (req, res) => {
+      try {
+        const { iid, email } = req.params;
+
+        // Find the comment by its ID
+        const comment = await Comment.findById(iid);
+
+        if (!comment) {
+          return res.status(404).json({ error: "Comment not found" });
+        }
+
+        // Assuming you have a User model for user management
+        const user = await User.findOne({ email });
+
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if the user has already liked the comment
+        if (comment.likedBy.includes(user._id)) {
+          return res
+            .status(400)
+            .json({ error: "User has already liked this comment" });
+        }
+
+        // Update the comment's likedBy array with the user's ObjectId
+        comment.likedBy.push(user._id);
+
+        // Increment the likes count
+        comment.likes++;
+
+        // Save the updated comment
+        await comment.save();
+
+        res.json({ message: "Comment liked successfully" });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+      }
+    });
+
+  
+
 
 app.listen(3000, (req, res) => {
   console.log("listening at port 3000");
