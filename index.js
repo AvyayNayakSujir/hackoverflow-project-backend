@@ -164,26 +164,23 @@ async function main() {
     }
   });
 
-  app.put("/api/updateIssue/:name", async (req, res) => {
+  app.put("/api/updateIssue/:id", async (req, res) => {
     try {
-      const name = req.params.name;
+      const id = req.params.id;
       const data = req.body;
-      const editedUser = await User.updateOne(
-        { username: name },
-        { $set: data }
-      );
+      await Issue.findByIdAndUpdate(id, data);
 
-      res.status(200).json({ editedUser: editedUser });
+      res.status(200).json({ message: "Updated Successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  app.delete("/api/deleteUser/:name", async (req, res) => {
+  app.delete("/api/deleteIssue/:id", async (req, res) => {
     try {
-      const name = req.params.name;
-      const deletedUser = await User.deleteOne({ username: name });
-      res.status(200).json({ editedRoom: deletedUser });
+      const id = req.params.id;
+      await Issue.findByIdAndDelete(id);
+      res.status(200).json({ message: "deleted successfully" });
     } catch (err) {
       console.log(err);
       res.status(504).json({ error: err });
