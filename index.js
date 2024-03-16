@@ -172,7 +172,8 @@ async function main() {
 
   app.post(
     "/api/issue",
-    upload.single("data[image]"),
+    upload.array("images"),
+
     (req, res, next) => {
       const newIssue = new Issue(req.body);
       newIssue
@@ -290,26 +291,39 @@ async function main() {
   });
 
   app.post("/single", upload.single("image"), (req, res) => {
+    let url = req.file.path;
+    let filename = req.file.filename;
+
+
+     
     //image upload demo
     console.log(req.file);
     res.send("image uploaded succesfully");
   });
 
-  app.post("/api/event", async (req, res) => {
+  app.post("/api/event", upload.single("image"), async (req, res) => {
     try {
       // Extract event data from request body
-      const eventData = req.body;
+      const { title, description, email } = req.body;
 
       // Find the user by email
-      const user = await User.findOne({ email: eventData.email });
+      const user = await User.findOne({ email });
 
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      // Assign the user's _id to the createdBy field of the event
-      eventData.createdBy = user._id;
-      // Create a new event using the event data
-      const newEvent = new Event(eventData);
+
+      // Create a new event object
+      const newEvent = new Event({
+        title,
+        description,
+        createdBy: user._id,
+        image: {
+          url: req.file.path, // Cloudinary URL of the image
+          filename: req.file.filename, // Cloudinary filename
+        },
+      });
+
       // Save the new event to the database
       await newEvent.save();
 
@@ -318,6 +332,7 @@ async function main() {
       res.status(500).json({ error: err.message });
     }
   });
+
 
   app.get("/api/getEvent/:id", async (req, res) => {
     try {
