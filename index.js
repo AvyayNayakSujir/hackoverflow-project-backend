@@ -186,7 +186,6 @@ async function main() {
         });
     },
     async (req, res, next) => {
-      console.log(req.body.title.split(" ").join("%20"));
       const admins = await User.find({ Type: "ADMIN" });
       admins.map((admin) => {
         email(
@@ -295,29 +294,48 @@ async function main() {
     res.send("image uploaded succesfully");
   });
 
-  app.post("/api/event", async (req, res) => {
-    try {
-      // Extract event data from request body
-      const eventData = req.body;
+  app.post(
+    "/api/event",
+    async (req, res, next) => {
+      try {
+        // Extract event data from request body
+        const eventData = req.body;
 
-      // Find the user by email
-      const user = await User.findOne({ email: eventData.email });
+        // Find the user by email
+        const user = await User.findOne({ email: eventData.email });
 
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        // Assign the user's _id to the createdBy field of the event
+        eventData.createdBy = user._id;
+        // Create a new event using the event data
+        const newEvent = new Event(eventData);
+        // Save the new event to the database
+        await newEvent.save();
+
+        res.json({ message: "Event created", event: newEvent });
+        next();
+      } catch (err) {
+        res.status(500).json({ error: err.message });
       }
-      // Assign the user's _id to the createdBy field of the event
-      eventData.createdBy = user._id;
-      // Create a new event using the event data
-      const newEvent = new Event(eventData);
-      // Save the new event to the database
-      await newEvent.save();
-
-      res.json({ message: "Event created", event: newEvent });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    },
+    //FIX
+    async (req, res, next) => {
+      const allUsers = await User.find();
+      allUsers.map((user) => {
+        email(
+          user.email,
+          `New Upcoming Event: ${req.body.name}`,
+          `Description: ${req.body.description} \n
+            Location: ${req.body.location} \n
+            website: http://localhost:3000/api/getIssue/${req.body.title
+              .split(" ")
+              .join("%20")}`
+        );
+      });
     }
-  });
+  );
 
   app.get("/api/getEvent/:id", async (req, res) => {
     try {
@@ -431,7 +449,7 @@ app.put("/comments/:iid/:email", async (req, res) => {
   }
 });
 
-app.delete('')
+app.delete("");
 
 app.listen(3000, (req, res) => {
   console.log("listening at port 3000");
