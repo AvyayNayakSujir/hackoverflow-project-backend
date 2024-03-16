@@ -13,3 +13,8 @@ Tech USED:
       Host this repo seperately from nextjs frontend
       used fetch apis function in nextjs to POST and GET data
         
+
+
+COMMANDS
+  npm i
+  node index.js
