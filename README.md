@@ -15,6 +15,6 @@ Tech USED:
         
 
 
-COMMANDS
-  npm i
-  node index.js
+        COMMANDS
+        npm i
+        node index.js
