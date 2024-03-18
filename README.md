@@ -7,7 +7,7 @@ Tech USED:
     3. models are Users,Events,Issues,Comments,Room/Flats
        --all of these have necessary CRUP operation supporting routes
        --used Cloudinary to store the images
-       --used nodemailer to notify the users/admins in the secretery
+       --used nodemailer for automated emailing
 
     How it is Used:
       Host this repo seperately from nextjs frontend
